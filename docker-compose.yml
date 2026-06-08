@@ -1,0 +1,66 @@
+# This file defines and run multiple docker conatiners together as one application stack.
+
+version: "3.9"  # this file follows Docker Compose specification version 3.9 which tells docker what features are supported.
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: dashboard-postgres
+    restart: always   # automatically restart the container if it stops or crashes
+    environment:   #envionment variable
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: dashboard_db
+    ports:   # maps container ports to host ports.
+      - "127.0.0.1:5432:5432"
+    volumes:  # persist data outside the container, so it won't be lost when the container is removed or recreated.
+      - postgres_data:/var/lib/postgresql/data
+    networks:  # connect this service to the custom network defined at the bottom of the file.
+      - dashboard-net
+
+  redis:   # used for caching and session management in our application.
+    image: redis:7-alpine
+    container_name: dashboard-redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - dashboard-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dashboard-backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dashboard-net
+    # No ports exposed directly — Nginx is the only entry point
+
+  nginx:
+    image: nginx:alpine
+    container_name: dashboard-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro  
+      # - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - dashboard-net
+
+networks:
+  dashboard-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
