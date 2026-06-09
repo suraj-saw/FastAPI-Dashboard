@@ -1,7 +1,5 @@
 # This file defines and run multiple docker conatiners together as one application stack.
 
-version: "3.9"  # this file follows Docker Compose specification version 3.9 which tells docker what features are supported.
-
 services:
 
   postgres:
