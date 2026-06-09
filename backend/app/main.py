@@ -33,3 +33,7 @@ app.include_router(dashboard.router)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/")
+def home():
+    return {"message": "Dashboard API is running"}
