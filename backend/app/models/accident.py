@@ -1,5 +1,6 @@
 # backend/app/models/accident.py
 
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from app.database import Base
 
