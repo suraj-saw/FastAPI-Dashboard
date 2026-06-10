@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
@@ -28,31 +27,11 @@ import { StateChart } from "../components/charts/StateChart";
 import { useDashboard } from "../hooks/useDashboard";
 import type { DashboardFilters } from "../types/dashboard";
 
-const YEARS = [
-  "all",
-  "2019",
-  "2020",
-  "2021",
-  "2022",
-  "2023",
-  "2024",
-  "2025",
-  "2026",
-];
-const SEVERITIES = [
-  "all",
-  "Fatal",
-  "Grievous Injury",
-  "Minor Injury",
-  "Damage Only",
-];
-
 function fmt(n: number) {
   return n.toLocaleString("en-IN");
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>({
     district: "all",
@@ -61,8 +40,31 @@ export default function Dashboard() {
   });
   const [districtSearch, setDistrictSearch] = useState("");
 
+  // Fetch with no filters so filter dropdowns always have full option lists
+  const allDataFilters: DashboardFilters = { district: "all", year: "all", severity: "all" };
+  const { data: allData } = useDashboard(allDataFilters);
   const { data, loading, error, refetch } = useDashboard(filters);
 
+  // ── Dynamic filter options derived from live API data ──────────────────────
+
+  /** Unique sorted years from the full (unfiltered) time series */
+  const years = useMemo(() => {
+    const uniqueYears = Array.from(
+      new Set(allData.timeSeries.map((p) => String(p.year)))
+    ).sort();
+    return ["all", ...uniqueYears];
+  }, [allData.timeSeries]);
+
+  /** Severity labels from the full (unfiltered) severity breakdown */
+  const severities = useMemo(() => {
+    const labels = allData.severity
+      .map((s) => s.severity)
+      .filter(Boolean)
+      .sort();
+    return ["all", ...labels];
+  }, [allData.severity]);
+
+  /** District options derived from the filtered data (year-aware) */
   const districts = useMemo(() => {
     const names = data.districts.map((d) => d.district).filter(Boolean);
     return ["all", ...Array.from(new Set(names))];
@@ -78,28 +80,9 @@ export default function Dashboard() {
 
   const topDangerous = data.dangerous[0];
 
-  // function handleLogout() {
-  //   const refresh = sessionStorage.getItem("refresh_token");
-  //   if (refresh) {
-  //     import("../api/axios").then(({ default: api }) =>
-  //       api.post("/auth/logout", { refresh_token: refresh }).catch(() => {})
-  //     );
-  //   }
-  //   sessionStorage.clear();
-  //   navigate("/login");
-  // }
-
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
-
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* <Navbar
-          onMenuClick={() => setSidebarOpen(true)}
-          loading={loading}
-          onRefresh={refetch}
-        /> */}
-
         <div className="flex-1 overflow-auto">
           <div className="flex gap-5 p-5 min-h-full">
             {/* ── Filter panel ─────────────────────────────────── */}
@@ -109,7 +92,7 @@ export default function Dashboard() {
                   Filters
                 </p>
 
-                {/* Year */}
+                {/* Year — options from live data */}
                 <div className="mb-3">
                   <label className="block text-xs font-semibold text-slate-500 mb-1">
                     Year
@@ -122,7 +105,7 @@ export default function Dashboard() {
                       }
                       className="w-full appearance-none rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      {YEARS.map((y) => (
+                      {years.map((y) => (
                         <option key={y} value={y}>
                           {y === "all" ? "All years" : y}
                         </option>
@@ -173,7 +156,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Severity */}
+                {/* Severity (map) — options from live data */}
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-slate-500 mb-1">
                     Severity (map)
@@ -186,7 +169,7 @@ export default function Dashboard() {
                       }
                       className="w-full appearance-none rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      {SEVERITIES.map((s) => (
+                      {severities.map((s) => (
                         <option key={s} value={s}>
                           {s === "all" ? "All severity" : s}
                         </option>
@@ -234,14 +217,6 @@ export default function Dashboard() {
                   {fmt(data.heatmap.length)} mapped accident points.
                 </p>
               </div>
-
-              {/* Logout */}
-              {/* <button
-                onClick={handleLogout}
-                className="w-full text-xs font-semibold py-2 rounded-lg border border-red-200 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-              >
-                Logout
-              </button> */}
             </aside>
 
             {/* ── Main content ──────────────────────────────────── */}
@@ -426,7 +401,6 @@ export default function Dashboard() {
 
                 {/* Most dangerous + road types */}
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 flex flex-col gap-3">
-                  {/* Most dangerous district */}
                   {topDangerous && (
                     <div className="rounded-lg bg-linear-to-br from-slate-800 to-red-900 text-white p-4">
                       <p className="text-xs text-slate-300 uppercase tracking-widest mb-1">
@@ -442,7 +416,6 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Road types */}
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
                       <Route size={12} /> Road types
