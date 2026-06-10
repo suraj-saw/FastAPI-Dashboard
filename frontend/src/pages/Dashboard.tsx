@@ -78,27 +78,27 @@ export default function Dashboard() {
 
   const topDangerous = data.dangerous[0];
 
-  function handleLogout() {
-    const refresh = sessionStorage.getItem("refresh_token");
-    if (refresh) {
-      import("../api/axios").then(({ default: api }) =>
-        api.post("/auth/logout", { refresh_token: refresh }).catch(() => {})
-      );
-    }
-    sessionStorage.clear();
-    navigate("/login");
-  }
+  // function handleLogout() {
+  //   const refresh = sessionStorage.getItem("refresh_token");
+  //   if (refresh) {
+  //     import("../api/axios").then(({ default: api }) =>
+  //       api.post("/auth/logout", { refresh_token: refresh }).catch(() => {})
+  //     );
+  //   }
+  //   sessionStorage.clear();
+  //   navigate("/login");
+  // }
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Navbar
+        {/* <Navbar
           onMenuClick={() => setSidebarOpen(true)}
           loading={loading}
           onRefresh={refetch}
-        />
+        /> */}
 
         <div className="flex-1 overflow-auto">
           <div className="flex gap-5 p-5 min-h-full">
@@ -236,12 +236,12 @@ export default function Dashboard() {
               </div>
 
               {/* Logout */}
-              <button
+              {/* <button
                 onClick={handleLogout}
                 className="w-full text-xs font-semibold py-2 rounded-lg border border-red-200 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
               >
                 Logout
-              </button>
+              </button> */}
             </aside>
 
             {/* ── Main content ──────────────────────────────────── */}
